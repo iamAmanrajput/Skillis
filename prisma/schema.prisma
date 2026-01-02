@@ -1,0 +1,93 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid()) 
+  // Unique user ID (auto-generate hoti hai)
+
+  email         String    @unique              
+  // User ka login email (signup ke time tum dete ho)
+
+  name          String?                       
+  // User ka display name (optional)
+
+  image         String?                       
+  // Profile image / avatar URL (optional, later use)
+
+  emailVerified Boolean   @default(false)     
+  // Email verify hui ya nahi (Better Auth handle karta)
+
+  role          Role      @default(CANDIDATE)      
+  // User role: USER ya ADMIN (authorization ke liye)
+
+  accounts      Account[]                    
+  // User ke saare login methods (email, google, github)
+
+  sessions      Session[]                    
+  // User ke active login sessions (devices)
+
+  createdAt     DateTime  @default(now())     
+  // Account kab create hua (auto)
+
+  updatedAt     DateTime  @updatedAt          
+  // Last update time (auto)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  // Account table ka unique ID (auto)
+
+  userId            String
+  // Ye account kis user ka hai (User.id se linked)
+
+  provider          String
+  // Login provider: "credentials", "google", "github"
+
+  providerAccountId String
+  // Provider side ka unique user ID
+  // (Google ID / GitHub ID / email)
+
+  accessToken       String?
+  // OAuth access token (sirf Google/GitHub ke liye)
+
+  refreshToken      String?
+  // OAuth refresh token (token renew karne ke liye)
+
+  expiresAt         Int?
+  // Access token kab expire hoga (Unix timestamp)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Account → User relation (user delete hua to account bhi delete)
+
+  @@unique([provider, providerAccountId])
+  // Same provider + same account duplicate na ho
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  // Session ka unique ID (auto)
+
+  userId       String
+  // Ye session kis user ka hai
+
+  sessionToken String   @unique
+  // Unique session identifier (cookie me store hota hai)
+
+  expires      DateTime
+  // Session kab expire hogi (auto set by Better Auth)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Session → User relation
+}
+
+enum Role {
+  CANDIDATE
+  INTERVIEWER
+}
